@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X } from 'lucide-react';
 import Image from 'next/image';
@@ -14,7 +14,7 @@ interface ImageUploadProps {
     onMultipleFiles?: (files: File[]) => void;
     hidePreview?: boolean;
     type: 'image' | 'logo';
-    onUploadComplete: (url: string, metadata: { width: number; height: number; aspectRatio: number }) => void;
+    onUploadComplete: () => void;
     siteId: string;
 }
 
@@ -30,58 +30,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     onUploadComplete,
     siteId,
 }) => {
-    const [uploading, setUploading] = useState(false);
-
-    const uploadFile = async (file: File) => {
-        setUploading(true);
-        console.log('Starting file upload:', {
-            fileName: file.name,
-            type,
-            size: file.size
-        });
-
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('type', type);
-            formData.append('siteId', siteId);
-
-            const response = await fetch('/api/upload-asset', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || ''
-                }
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Upload response error:', {
-                    status: response.status,
-                    error: errorData
-                });
-                throw new Error('Upload failed');
-            }
-
-            const data = await response.json();
-            console.log('Upload successful:', { url: data.url });
-            onUploadComplete(data.url, data.metadata);
-        } catch (error) {
-            console.error('Upload error:', error);
-        } finally {
-            setUploading(false);
-        }
-    };
-
     const onDrop = useCallback((acceptedFiles: File[]) => {
         if (multiple && onMultipleFiles) {
-            Promise.all(acceptedFiles.map(file => uploadFile(file)))
-                .then(() => onMultipleFiles(acceptedFiles));
+            onMultipleFiles(acceptedFiles);
         } else if (acceptedFiles.length > 0) {
-            uploadFile(acceptedFiles[0])
-                .then(() => onChange(acceptedFiles[0]));
+            onChange(acceptedFiles[0]);
         }
-    }, [onChange, multiple, onMultipleFiles, uploadFile]);
+        onUploadComplete();
+    }, [onChange, multiple, onMultipleFiles, onUploadComplete]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -109,7 +65,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                     <div className="relative w-full h-48">
                         <Image
                             src={URL.createObjectURL(value)}
-                            alt="Uploaded image"
+                            alt="Selected image"
                             fill
                             style={{ objectFit: 'contain' }}
                         />
@@ -150,11 +106,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                     placeholder="Image description"
                     className="w-full p-2 border rounded-md"
                 />
-            )}
-            {uploading && (
-                <div className="text-sm text-blue-600">
-                    Uploading...
-                </div>
             )}
         </div>
     );

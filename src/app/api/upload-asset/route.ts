@@ -7,15 +7,15 @@ const s3 = new S3Service();
 export async function POST(request: Request) {
   try {
     await checkRateLimit(request);
-    
+
     const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const type = formData.get('type') as string;
-    const siteId = formData.get('siteId') as string;
-    
+    const file = formData.get("file") as File;
+    const type = formData.get("type") as string;
+    const siteId = formData.get("siteId") as string;
+
     if (!file || !siteId) {
       return NextResponse.json(
-        { error: 'Missing file or siteId' },
+        { error: "Missing file or siteId" },
         { status: 400 }
       );
     }
@@ -40,4 +40,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
