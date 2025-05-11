@@ -4,7 +4,7 @@ import "./globals.css";
 import ConditionalNavbar from '@/components/ConditionalNavbar';
 import Providers from './providers';
 import { Toaster } from "react-hot-toast";
-import GlobalInfoBanner from "@/components/GlobalInfoBanner";
+// import GlobalInfoBanner from "@/components/GlobalInfoBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,7 +35,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <GlobalInfoBanner />
+          {/* <GlobalInfoBanner /> */}
           <ConditionalNavbar />
           {children}
         </Providers>

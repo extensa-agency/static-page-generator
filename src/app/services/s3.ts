@@ -3,8 +3,6 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
-  PutBucketPolicyCommand,
-  PutBucketCorsCommand,
   DeleteObjectsCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
@@ -41,73 +39,73 @@ export class S3Service {
     });
   }
 
-  private async ensurePublicAccess() {
-    // Set bucket policy
-    const bucketPolicy = {
-      Version: "2012-10-17",
-      Statement: [
-        {
-          Sid: "PublicReadGetObject",
-          Effect: "Allow",
-          Principal: "*",
-          Action: "s3:GetObject",
-          Resource: [
-            `arn:aws:s3:::${this.bucketName}`,
-            `arn:aws:s3:::${this.bucketName}/*`,
-            `arn:aws:s3:::${this.bucketName}/*/*`,
-            `arn:aws:s3:::${this.bucketName}/*/*/*`,
-          ],
-        },
-      ],
-    };
+  // private async ensurePublicAccess() {
+  //   // Set bucket policy
+  //   const bucketPolicy = {
+  //     Version: "2012-10-17",
+  //     Statement: [
+  //       {
+  //         Sid: "PublicReadGetObject",
+  //         Effect: "Allow",
+  //         Principal: "*",
+  //         Action: "s3:GetObject",
+  //         Resource: [
+  //           `arn:aws:s3:::${this.bucketName}`,
+  //           `arn:aws:s3:::${this.bucketName}/*`,
+  //           `arn:aws:s3:::${this.bucketName}/*/*`,
+  //           `arn:aws:s3:::${this.bucketName}/*/*/*`,
+  //         ],
+  //       },
+  //     ],
+  //   };
 
-    const corsConfiguration = {
-      CORSRules: [
-        {
-          AllowedOrigins: ["*"],
-          AllowedMethods: ["GET", "HEAD"],
-          AllowedHeaders: ["*"],
-          MaxAgeSeconds: 3000,
-        },
-      ],
-    };
+  //   const corsConfiguration = {
+  //     CORSRules: [
+  //       {
+  //         AllowedOrigins: ["*"],
+  //         AllowedMethods: ["GET", "HEAD"],
+  //         AllowedHeaders: ["*"],
+  //         MaxAgeSeconds: 3000,
+  //       },
+  //     ],
+  //   };
 
-    try {
-      console.log("S3Service: Setting bucket policy");
-      console.log(
-        "S3Service: Bucket policy:",
-        JSON.stringify(bucketPolicy, null, 2)
-      );
+  //   try {
+  //     console.log("S3Service: Setting bucket policy");
+  //     console.log(
+  //       "S3Service: Bucket policy:",
+  //       JSON.stringify(bucketPolicy, null, 2)
+  //     );
 
-      await this.s3.send(
-        new PutBucketPolicyCommand({
-          Bucket: this.bucketName,
-          Policy: JSON.stringify(bucketPolicy),
-        })
-      );
-      console.log("S3Service: Bucket policy set successfully");
+  //     await this.s3.send(
+  //       new PutBucketPolicyCommand({
+  //         Bucket: this.bucketName,
+  //         Policy: JSON.stringify(bucketPolicy),
+  //       })
+  //     );
+  //     console.log("S3Service: Bucket policy set successfully");
 
-      console.log("S3Service: Setting CORS configuration");
-      await this.s3.send(
-        new PutBucketCorsCommand({
-          Bucket: this.bucketName,
-          CORSConfiguration: corsConfiguration,
-        })
-      );
-      console.log("S3Service: CORS configuration set successfully");
-    } catch (error) {
-      console.error("S3Service: Error in ensurePublicAccess:");
-      console.error(
-        "S3Service: Error details:",
-        JSON.stringify(error, null, 2)
-      );
-      console.error(
-        "S3Service: Error stack:",
-        error instanceof Error ? error.stack : "No stack trace"
-      );
-      throw error;
-    }
-  }
+  //     console.log("S3Service: Setting CORS configuration");
+  //     await this.s3.send(
+  //       new PutBucketCorsCommand({
+  //         Bucket: this.bucketName,
+  //         CORSConfiguration: corsConfiguration,
+  //       })
+  //     );
+  //     console.log("S3Service: CORS configuration set successfully");
+  //   } catch (error) {
+  //     console.error("S3Service: Error in ensurePublicAccess:");
+  //     console.error(
+  //       "S3Service: Error details:",
+  //       JSON.stringify(error, null, 2)
+  //     );
+  //     console.error(
+  //       "S3Service: Error stack:",
+  //       error instanceof Error ? error.stack : "No stack trace"
+  //     );
+  //     throw error;
+  //   }
+  // }
 
   async deploy(
     siteId: string,
@@ -119,10 +117,6 @@ export class S3Service {
     });
 
     try {
-      console.log("S3Service: Ensuring public access");
-      await this.ensurePublicAccess();
-      console.log("S3Service: Public access ensured successfully");
-
       console.log("S3Service: Creating upload promises");
       const uploadPromises = files.map((file) => {
         const key = `${siteId}/${file.name}`;

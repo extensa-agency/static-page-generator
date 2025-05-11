@@ -1,6 +1,6 @@
 'use client'
 import { useRouter } from "next/navigation"
-import { use } from 'react'
+import { use, useEffect } from 'react'
 import { useProjectLimits } from "@/hooks/useProjectLimits"
 import { toast } from "react-hot-toast"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,12 @@ export default function Dashboard({ params }: DashboardProps) {
     const resolvedParams = use(params)
     const { data: projectLimits } = useProjectLimits(resolvedParams.userId)
     const { data: websites } = useWebsites(resolvedParams.userId);
-
+    useEffect(() => {
+        const removeStaleDomainData = () => {
+            localStorage.removeItem('domainSetupData')
+        }
+        removeStaleDomainData()
+    }, [])
     const handleCreateNewProject = () => {
         if (!projectLimits?.canCreateMore) {
             toast.error("Project limit reached. Please upgrade your plan.")

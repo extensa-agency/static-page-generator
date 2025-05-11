@@ -1,10 +1,10 @@
 'use client'
 import { usePathname, useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
-import { ChevronRight, Home, Check } from "lucide-react";
-import Link from "next/link";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import React from "react";
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 interface DomainLayoutProps {
     children: React.ReactNode;
@@ -17,7 +17,7 @@ interface DomainLayoutProps {
 const steps = [
     { name: "Input", path: "input", icon: "📝" },
     { name: "Validation", path: "validation", icon: "✓" },
-    { name: "Distribution", path: "distribution", icon: "🌐" },
+    // { name: "Distribution", path: "distribution", icon: "🌐" },
     { name: "DNS", path: "dns", icon: "🔗" },
     { name: "Complete", path: "complete", icon: "🎉" },
 ];
@@ -61,43 +61,20 @@ export default function DomainLayout({ children, params }: DomainLayoutProps) {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8 space-y-8">
+        <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Breadcrumbs */}
-            <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Link
-                    href={`/${userId}/edit/${projectId}`}
-                    className="flex items-center hover:text-foreground"
-                >
-                    <Home className="h-4 w-4 mr-1" />
-                    Project
-                </Link>
-                <ChevronRight className="h-4 w-4" />
-                <Link
-                    href={`/${userId}/edit/${projectId}/domain/input`}
-                    className="text-foreground hover:text-primary"
-                >
-                    Domain Setup
-                </Link>
-                {currentStep >= 0 && (
-                    <>
-                        {steps.slice(0, currentStep + 1).map((step, idx, arr) => (
-                            <React.Fragment key={step.path}>
-                                <ChevronRight className="h-4 w-4" />
-                                {idx !== arr.length - 1 ? (
-                                    <Link
-                                        href={`/${userId}/edit/${projectId}/domain/${step.path}`}
-                                        className="text-foreground hover:text-primary"
-                                    >
-                                        {step.name}
-                                    </Link>
-                                ) : (
-                                    <span className="text-primary">{step.name}</span>
-                                )}
-                            </React.Fragment>
-                        ))}
-                    </>
-                )}
-            </nav>
+            <Breadcrumbs
+                items={[
+                    { label: "Projects", href: `/${userId}` },
+                    { label: "Edit Project", href: `/${userId}/edit/${projectId}` },
+                    { label: "Domain Setup", href: `/${userId}/edit/${projectId}/domain/input` },
+                    ...(currentStep >= 0 ? steps.slice(0, currentStep + 1).map((step, idx, arr) => ({
+                        label: step.name,
+                        href: idx !== arr.length - 1 ? `/${userId}/edit/${projectId}/domain/${step.path}` : undefined,
+                        isActive: idx === arr.length - 1
+                    })) : [])
+                ]}
+            />
 
             {/* Progress Steps */}
             <div className="relative mt-12">

@@ -49,7 +49,7 @@ export default function WebsiteCard(props: Props) {
             setDeletingId(null)
         }
     }
-
+    const previewUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/proxy?url=${encodeURIComponent(project.preview_url)}`
     return (
         <Card
             key={props.projectId}
@@ -63,7 +63,7 @@ export default function WebsiteCard(props: Props) {
                     }
                 }}>
                 <Image
-                    src={project.preview_url || "/placeholder.svg"}
+                    src={previewUrl || "/placeholder.svg"}
                     alt={project.name}
                     fill
                     className="object-cover hover:scale-105 transition-transform duration-300"

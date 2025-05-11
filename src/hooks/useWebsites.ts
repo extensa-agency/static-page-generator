@@ -42,8 +42,7 @@ export function useWebsites(userId: string) {
           )
         `
         )
-        .eq("user_id", userId)
-        .limit(1);
+        .eq("user_id", userId);
       return data as Website[];
     },
     staleTime: 1000 * 60 * 5,

@@ -9,6 +9,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'myaisitebuilder.s3.us-east-2.amazonaws.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
       }
     ],
   },

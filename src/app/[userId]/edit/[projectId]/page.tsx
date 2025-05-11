@@ -3,11 +3,37 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWebsites } from '@/hooks/useWebsites';
 import { use } from 'react';
 import { PanelResizeHandle, Panel, PanelGroup } from "react-resizable-panels"
-import { GripVertical, Globe } from "lucide-react"
+import { GripVertical, Globe, Settings, Trash2, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Badge } from '@/components/ui/badge';
-// import { useState } from "react"
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { useState } from "react"
+import { toast } from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface PageProps {
     params: Promise<{
@@ -18,7 +44,27 @@ interface PageProps {
 export default function ProjectEditPage({ params }: PageProps) {
     const { projectId, userId } = use(params)
     const { data: websites, isLoading, error } = useWebsites(userId);
-
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null)
+    const queryClient = useQueryClient()
+    async function handleDeleteProject(siteId: string) {
+        try {
+            setDeletingId(siteId)
+            const response = await fetch('/api/delete-site', {
+                method: 'POST',
+                body: JSON.stringify({ siteId: siteId })
+            })
+            if (response.ok) {
+                await queryClient.invalidateQueries({ queryKey: ["websites", userId] });
+                await queryClient.invalidateQueries({ queryKey: ["projectLimits", userId] });
+                toast.success('Project deleted successfully')
+            } else {
+                toast.error('Failed to delete project')
+            }
+        } finally {
+            setDeletingId(null)
+        }
+    }
     if (isLoading) return (
         <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-4" /> {/* Title skeleton */}
@@ -78,31 +124,100 @@ export default function ProjectEditPage({ params }: PageProps) {
 
     return (
         <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h1 className="text-2xl font-bold mb-4">Edit Project</h1>
+            <Breadcrumbs
+                items={[
+                    { label: "Projects", href: `/${userId}` },
+                    { label: "Edit Project", isActive: true }
+                ]}
+                className="mb-4"
+            />
             <div className="flex justify-between items-center mb-6">
-                {!website.domain_setups[0]?.completed ? <div className="space-x-4">
-                    <Button variant="outline" asChild>
-                        <Link href={`/${userId}/edit/${projectId}/domain`}>
-                            <Globe className="mr-2 h-4 w-4" />
-                            Domain Setup
-                        </Link>
-                    </Button>
-                </div> :
-                    <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="rounded-full px-3 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                            <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
-                            Domain Connected
-                        </Badge>
-                        <Link href={`https://${website.domain_setups[0].domain_name}`} target="_blank" rel="noopener noreferrer">
+                <h1 className="text-2xl font-bold">Edit Project</h1>
+                <div className="flex items-center gap-2">
+                    {website.domain_setups[0]?.completed && (
+                        <>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <HelpCircle className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="w-80 p-4">
+                                        <div className="space-y-2">
+                                            <h4 className="font-semibold">Domain Setup Status</h4>
+                                            <p className="text-sm text-muted-foreground">
+                                                Your domain has been successfully connected! Here's what's happening:
+                                            </p>
+                                            <ul className="text-sm space-y-1 list-disc list-inside">
+                                                <li>DNS changes are propagating (can take up to 48 hours)</li>
+                                                <li>SSL certificate is active and secure</li>
+                                                <li>CloudFront distribution is configured</li>
+                                            </ul>
+                                            <p className="text-sm text-muted-foreground mt-2">
+                                                If you can't access your site yet, please wait for DNS propagation to complete.
+                                            </p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <Badge variant="secondary" className="rounded-full px-3 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                                Domain Connected
+                            </Badge>
+                        </>
+                    )}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm">
-                                <Globe className="mr-2 h-4 w-4" />
-                                Visit {website.domain_setups[0].domain_name}
+                                <Settings className="h-4 w-4 mr-2" />
+                                Settings
                             </Button>
-                        </Link>
-                    </div>
-                }
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel>Website Settings</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {!website.domain_setups[0]?.completed ? (
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/${userId}/edit/${projectId}/domain`}>
+                                        <Globe className="h-4 w-4 mr-2" />
+                                        Connect Domain
+                                    </Link>
+                                </DropdownMenuItem>
+                            ) : (
+                                <DropdownMenuItem asChild>
+                                    <Link href={`https://${website.domain_setups[0].domain_name}`} target="_blank" rel="noopener noreferrer">
+                                        <Globe className="h-4 w-4 mr-2" />
+                                        Visit Website
+                                    </Link>
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                        <Trash2 className="h-4 w-4 mr-2 text-destructive" />
+                                        Delete Website
+                                    </DropdownMenuItem>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Delete Website</DialogTitle>
+                                        <DialogDescription>
+                                            Are you sure you want to delete this website? This action cannot be undone.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+                                        <Button disabled={deletingId === projectId} variant="destructive" onClick={() => handleDeleteProject(projectId)}>{deletingId === projectId ? "Deleting..." : "Delete"}</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
 
             <PanelGroup
@@ -122,7 +237,9 @@ export default function ProjectEditPage({ params }: PageProps) {
                         <CardContent className="flex-1 p-0">
                             <div className="h-full w-full border rounded-lg overflow-hidden">
                                 <iframe
-                                    src={website.project_url}
+                                    src={website.cloudfront_domain
+                                        ? `https://${website.cloudfront_domain}`
+                                        : `${process.env.NEXT_PUBLIC_SITE_URL}/api/proxy?url=${encodeURIComponent(website.project_url)}`}
                                     className="w-full h-full"
                                     title="Website Preview"
                                 />
